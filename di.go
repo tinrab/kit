@@ -1,28 +1,58 @@
 package util
 
+import (
+	"reflect"
+)
+
+type Dependency interface {
+	Init() error
+}
+
 // DependencyInjection contains dependencies by name
 type DependencyInjection struct {
-	container map[string]interface{}
+	container map[string]Dependency
 }
 
 // NewDependencyInjection creates new instance of DependencyInjection
 func NewDependencyInjection() *DependencyInjection {
 	return &DependencyInjection{
-		container: make(map[string]interface{}),
+		container: make(map[string]Dependency),
 	}
 }
 
 // Provide registers a dependency
-func (di *DependencyInjection) Provide(name string, dependency interface{}) {
+func (di *DependencyInjection) Provide(name string, dependency Dependency) {
 	di.container[name] = dependency
 }
 
-// ProvideWith registers a dependency by calling a constructor function
-func (di *DependencyInjection) ProvideWith(name string, constructor func(di *DependencyInjection) interface{}) {
-	di.container[name] = constructor(di)
+// Get returns a dependency by name
+func (di *DependencyInjection) Get(name string) Dependency {
+	return di.container[name]
 }
 
-// Get returns a dependency by name
-func (di *DependencyInjection) Get(name string) interface{} {
-	return di.container[name]
+// Resolve decorates objects with dependencies and initializes them
+func (di *DependencyInjection) Resolve() error {
+	for _, dep := range di.container {
+		di.inject(dep)
+	}
+	for _, dep := range di.container {
+		err := dep.Init()
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (di *DependencyInjection) inject(obj interface{}) {
+	t := reflect.TypeOf(obj).Elem()
+	for i := 0; i < t.NumField(); i++ {
+		field := t.Field(i)
+		inject := field.Tag.Get("inject")
+		if inject == "" {
+			continue
+		}
+		dependency := di.Get(inject)
+		reflect.ValueOf(obj).Elem().Field(i).Set(reflect.ValueOf(dependency))
+	}
 }
