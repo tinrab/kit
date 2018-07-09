@@ -1,4 +1,4 @@
-module github.com/tinrab/util
+module github.com/tinrab/kit
 
 require (
 	github.com/davecgh/go-spew v1.1.0

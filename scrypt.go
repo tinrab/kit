@@ -1,15 +1,21 @@
-package util
+package kit
 
 import (
 	"golang.org/x/crypto/scrypt"
 	"encoding/binary"
 	"bytes"
 	"encoding/base64"
+	"crypto/rand"
 )
 
 // Scrypt computes scrypt key using data and cost parameters.
 func Scrypt(data []byte, n, r, p, keyLength int) ([]byte, error) {
-	salt := []byte{0xc8, 0x28, 0xf2, 0x58, 0xa7, 0x6a, 0xad, 0x7b}
+	salt := make([]byte, 8)
+	_, err := rand.Read(salt)
+	if err != nil {
+		return nil, err
+	}
+
 	hash, err := scrypt.Key(data, salt, n, r, p, keyLength)
 	if err != nil {
 		return nil, err
@@ -21,6 +27,7 @@ func Scrypt(data []byte, n, r, p, keyLength int) ([]byte, error) {
 	s += binary.PutUvarint(head[s:], uint64(p))
 	s += binary.PutUvarint(head[s:], uint64(keyLength))
 	hash = append(head[0:s], hash...)
+	hash = append(salt, hash...)
 
 	return hash, nil
 }
@@ -37,6 +44,11 @@ func ScryptToBase64(data []byte, n, r, p, keyLength int) (string, error) {
 // ScryptEquals compares data with scrypt hash and returns true if they are equal.
 func ScryptEquals(data, hash []byte) bool {
 	buf := bytes.NewReader(hash)
+	salt := make([]byte, 8)
+	_, err := buf.Read(salt)
+	if err != nil {
+		return false
+	}
 	n, err := binary.ReadUvarint(buf)
 	if err != nil {
 		return false
@@ -53,8 +65,9 @@ func ScryptEquals(data, hash []byte) bool {
 	if err != nil {
 		return false
 	}
+	hash = hash[len(hash)-buf.Len():]
 
-	dataHash, err := Scrypt(data, int(n), int(r), int(p), int(keyLength))
+	dataHash, err := scrypt.Key(data, salt, int(n), int(r), int(p), int(keyLength))
 	if err != nil {
 		return false
 	}
