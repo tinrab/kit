@@ -1,4 +1,4 @@
-# Util
+# Kit
 
 A collection of utilities.
 
