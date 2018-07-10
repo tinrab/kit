@@ -18,9 +18,12 @@ func (d *databaseImpl) GetValue() int {
 	return 42
 }
 
-func (d *databaseImpl) Init() error {
+func (d *databaseImpl) Open() error {
 	d.Started = true
 	return nil
+}
+
+func (d *databaseImpl) Close() {
 }
 
 type service struct {
@@ -28,9 +31,12 @@ type service struct {
 	Started  bool
 }
 
-func (s *service) Init() error {
+func (s *service) Open() error {
 	s.Started = true
 	return nil
+}
+
+func (s *service) Close() {
 }
 
 func TestDependencyInjection(t *testing.T) {

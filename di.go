@@ -5,7 +5,8 @@ import (
 )
 
 type Dependency interface {
-	Init() error
+	Open() error
+	Close()
 }
 
 // DependencyInjection contains dependencies by name
@@ -36,12 +37,19 @@ func (di *DependencyInjection) Resolve() error {
 		di.inject(dep)
 	}
 	for _, dep := range di.container {
-		err := dep.Init()
+		err := dep.Open()
 		if err != nil {
 			return err
 		}
 	}
 	return nil
+}
+
+// Close closes all dependencies
+func (di *DependencyInjection) Close() {
+	for _, dep := range di.container {
+		dep.Close()
+	}
 }
 
 func (di *DependencyInjection) inject(obj interface{}) {
