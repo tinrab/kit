@@ -1,5 +1,7 @@
 # Kit
 
+[![Build Status](https://travis-ci.org/tinrab/kit.svg?branch=master)](https://travis-ci.org/tinrab/kit)
+
 A collection of utilities.
 
 ## Utilities
