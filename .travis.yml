@@ -1,0 +1,9 @@
+language: go
+
+go:
+  - "1.10.x"
+
+before_install:
+  - go get -u golang.org/x/vgo
+
+script: vgo test -v ./...
