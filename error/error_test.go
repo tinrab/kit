@@ -1,4 +1,4 @@
-package kit
+package error
 
 import (
 	"testing"

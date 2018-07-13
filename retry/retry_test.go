@@ -1,4 +1,4 @@
-package kit
+package retry
 
 import (
 	"errors"
@@ -31,7 +31,7 @@ func TestRetrySleep(t *testing.T) {
 	startTime := time.Now().UnixNano()
 	sleepTime := 200 * time.Millisecond
 
-	err := RetrySleep(2, sleepTime, func(attempt int) (err error) {
+	err := Sleep(2, sleepTime, func(attempt int) (err error) {
 		if attempt == 0 {
 			err = errors.New("")
 		}
