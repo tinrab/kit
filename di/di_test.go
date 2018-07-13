@@ -1,4 +1,4 @@
-package kit
+package di
 
 import (
 	"testing"
@@ -6,7 +6,6 @@ import (
 )
 
 type Database interface {
-	Dependency
 	GetValue() int
 }
 
@@ -40,15 +39,40 @@ func (s *service) Close() {
 }
 
 func TestDependencyInjection(t *testing.T) {
-	di := NewDependencyInjection()
-	di.Provide("db", &databaseImpl{})
-	di.Provide("s", &service{})
+	c := New()
+	c.Provide("db", &databaseImpl{})
+	c.Provide("s", &service{})
 
-	assert.NoError(t, di.Resolve())
+	assert.NoError(t, c.Resolve())
 
-	db := di.Get("db").(*databaseImpl)
+	db, _ := c.GetByName("db").(*databaseImpl)
 	assert.True(t, db.Started)
-	s := di.Get("s").(*service)
+	s, _ := c.GetByName("s").(*service)
 	assert.True(t, s.Started)
 	assert.Equal(t, 42, s.Database.GetValue())
+}
+
+type A struct {
+	B *B
+}
+
+func (a *A) Value() int {
+	return a.B.Value()
+}
+
+type B struct {
+}
+
+func (b *B) Value() int {
+	return 42
+}
+
+func TestWithStruct(t *testing.T) {
+	c := New()
+	c.Provide("a", &A{})
+	c.Provide("b", &B{})
+	assert.NoError(t, c.Resolve())
+
+	a := c.GetByType(&A{}).(*A)
+	assert.Equal(t, 42, a.Value())
 }

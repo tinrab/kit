@@ -1,14 +1,14 @@
-package kit
+package retry
 
 import (
 	"time"
 )
 
-type RetryFunc func(int) error
+type Func func(int) error
 
 // Retry retries calling function f n-times.
 // It returns an error if none of the tries succeeds.
-func Retry(n int, f RetryFunc) (err error) {
+func Retry(n int, f Func) (err error) {
 	for i := 0; i < n; i++ {
 		err = f(i)
 		if err == nil {
@@ -18,9 +18,9 @@ func Retry(n int, f RetryFunc) (err error) {
 	return err
 }
 
-// RetrySleep retries calling function f n-times and sleeps for d after each call.
+// Sleep retries calling function f n-times and sleeps for d after each call.
 // It returns an error if none of the tries succeeds.
-func RetrySleep(n int, d time.Duration, f RetryFunc) (err error) {
+func Sleep(n int, d time.Duration, f Func) (err error) {
 	for i := 0; i < n; i++ {
 		err = f(i)
 		if err == nil {
@@ -32,7 +32,7 @@ func RetrySleep(n int, d time.Duration, f RetryFunc) (err error) {
 }
 
 // RetryForever keeps trying to call function f until it succeeds.
-func RetryForever(f RetryFunc) {
+func Forever(f Func) {
 	for i := 0; ; i++ {
 		err := f(i)
 		if err == nil {
@@ -42,7 +42,7 @@ func RetryForever(f RetryFunc) {
 }
 
 // RetryForeverSleep keeps trying to call function f until it succeeds, and sleeps after each failure.
-func RetryForeverSleep(d time.Duration, f RetryFunc) {
+func ForeverSleep(d time.Duration, f Func) {
 	for i := 0; ; i++ {
 		err := f(i)
 		if err == nil {

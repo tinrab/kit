@@ -1,4 +1,4 @@
-package kit
+package security
 
 import (
 	"golang.org/x/crypto/scrypt"
