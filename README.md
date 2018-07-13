@@ -6,6 +6,6 @@ A collection of utilities.
 
 ## Utilities
 
-- Dependency Injection ([source](./di.go), [examples](./di_test.go))
-- Retry ([source](./retry.go), [examples](./retry_test.go))
-- Scrypt ([source](./scrypt.go), [examples](./scrypt_test.go))
+- Dependency Injection ([source](./di), [examples](./di/di_test.go))
+- Security ([source](./security))
+- Retry ([source](./retry), [examples](./retry/retry_test.go))
