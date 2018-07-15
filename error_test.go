@@ -1,7 +1,8 @@
-package error
+package kit
 
 import (
 	"testing"
+
 	"github.com/stretchr/testify/assert"
 )
 
