@@ -1,4 +1,4 @@
-package error
+package kit
 
 import (
 	"fmt"
