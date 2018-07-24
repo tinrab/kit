@@ -20,6 +20,12 @@ func NewError(message string) *Error {
 	}
 }
 
+// With sets arguments for the error message.
+func (e *Error) With(args ...interface{}) *Error {
+	e.Args = args
+	return e
+}
+
 // Throw sets the file name, line number and any arguments for the error.
 func (e *Error) Throw(args ...interface{}) *Error {
 	e.Args = args
@@ -32,10 +38,10 @@ func (e *Error) Error() string {
 		if len(e.Args) == 0 {
 			return e.Message
 		}
-		return fmt.Sprintf(e.Message, e.Args)
+		return fmt.Sprintf(e.Message, e.Args...)
 	}
 	if len(e.Args) == 0 {
 		return fmt.Sprintf("%s:%d: %s", e.File, e.Line, e.Message)
 	}
-	return fmt.Sprintf("%s:%d: %s", e.File, e.Line, fmt.Sprintf(e.Message, e.Args))
+	return fmt.Sprintf("%s:%d: %s", e.File, e.Line, fmt.Sprintf(e.Message, e.Args...))
 }

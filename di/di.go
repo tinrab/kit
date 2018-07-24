@@ -9,29 +9,29 @@ type Dependency interface {
 	Close()
 }
 
-// Container contains dependencies by name
+// Container contains dependencies by name.
 type Container struct {
 	dependencies map[string]interface{}
 }
 
-// New creates new Container instance
+// New creates new Container instance.
 func New() *Container {
 	return &Container{
 		dependencies: make(map[string]interface{}),
 	}
 }
 
-// Provide registers a dependency
+// Provide registers a dependency.
 func (c *Container) Provide(name string, dependency interface{}) {
 	c.dependencies[name] = dependency
 }
 
-// GetByName returns a dependency by name
+// GetByName returns a dependency by name.
 func (c *Container) GetByName(name string) interface{} {
 	return c.dependencies[name]
 }
 
-// GetByType returns a dependency by type
+// GetByType returns a dependency by type.
 func (c *Container) GetByType(typ interface{}) interface{} {
 	t := reflect.TypeOf(typ)
 	for _, d := range c.dependencies {
@@ -43,7 +43,7 @@ func (c *Container) GetByType(typ interface{}) interface{} {
 	return nil
 }
 
-// Resolve decorates objects with dependencies and initializes them
+// Resolve decorates objects with dependencies and initializes them.
 func (c *Container) Resolve() error {
 	for _, d := range c.dependencies {
 		c.inject(d)
@@ -59,7 +59,7 @@ func (c *Container) Resolve() error {
 	return nil
 }
 
-// Close closes all dependencies
+// Close closes all dependencies.
 func (c *Container) Close() {
 	for _, d := range c.dependencies {
 		if dep, ok := d.(Dependency); ok {
