@@ -10,8 +10,8 @@ import (
 
 var (
 	ErrEmptyExpression   = kit.NewError("empty expression")
-	ErrInvalidType       = kit.NewError("invalid type")
-	ErrUnknownIdentifier = kit.NewError("unknown identifier '%s'")
+	ErrInvalidOperation  = kit.NewError("invalid operation '%s' at [%v]")
+	ErrUnknownIdentifier = kit.NewError("unknown identifier '%s' at [%v]")
 )
 
 type EvaluatorFunc func(s *Stack) interface{}
@@ -50,6 +50,8 @@ func (e *evaluator) Visit(node ast.Node) ast.Visitor {
 		e.VisitIdentifier(n)
 	case *ast.BinaryExpr:
 		e.VisitBinaryExpression(n)
+	case *ast.UnaryExpr:
+		e.VisitUnaryExpression(n)
 	case *ast.ParenExpr:
 		e.VisitParenthesesExpression(n)
 	case *ast.CallExpr:
@@ -92,8 +94,10 @@ func (e *evaluator) VisitBinaryExpression(n *ast.BinaryExpr) {
 				e.stack.Push(x / y)
 			case token.EQL:
 				e.stack.Push(x == y)
+			case token.NEQ:
+				e.stack.Push(x != y)
 			default:
-				e.err = ErrInvalidType
+				e.err = ErrInvalidOperation.With(n.Op, n.Pos())
 				return
 			}
 		}
@@ -101,6 +105,30 @@ func (e *evaluator) VisitBinaryExpression(n *ast.BinaryExpr) {
 		switch y := y.(type) {
 		case string:
 			e.stack.Push(x + y)
+		}
+	}
+}
+
+func (e *evaluator) VisitUnaryExpression(n *ast.UnaryExpr) {
+	ast.Walk(e, n.X)
+
+	x := e.stack.Pop()
+
+	switch x := x.(type) {
+	case float64:
+		switch n.Op {
+		case token.SUB:
+			e.stack.Push(-x)
+		default:
+			e.err = ErrInvalidOperation.With(n.Op, n.Pos())
+			return
+		}
+	case bool:
+		switch n.Op {
+		case token.NOT:
+			e.stack.Push(!x)
+		default:
+			e.err = ErrInvalidOperation.With(n.Op, n.Pos())
 		}
 	}
 }
