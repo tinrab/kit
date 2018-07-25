@@ -33,3 +33,9 @@ func TestBool(t *testing.T) {
 	assert.True(t, New("2 == 2").MustEvaluate().(bool))
 	assert.False(t, New("2 == 3").MustEvaluate().(bool))
 }
+
+func TestUnary(t *testing.T) {
+	assert.Equal(t, -3.0, New("-3").MustEvaluate().(float64))
+	assert.True(t, New("!false").MustEvaluate().(bool))
+	assert.True(t, New("3 == (2 + 1)").MustEvaluate().(bool))
+}
