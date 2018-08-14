@@ -9,3 +9,4 @@ A collection of utilities.
 - Dependency Injection ([source](./di), [examples](./di/di_test.go))
 - Security ([source](./security))
 - Retry ([source](./retry), [examples](./retry/retry_test.go))
+- Config ([source](./cfg), [examples](./cfg/cfg_test.go))
