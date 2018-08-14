@@ -7,44 +7,32 @@ import (
 	"reflect"
 )
 
-type testConfig struct {
-	A        testAConfig   `cfg:"a"`
-	D        string        `cfg:"d"`
-	E        float64       `cfg:"e"`
-	LiveTime time.Duration `cfg:"live_time"`
+type config struct {
+	Name    string        `cfg:"name"`
+	Service serviceConfig `cfg:"service"`
 }
 
-type testAConfig struct {
-	B uint32 `cfg:"b"`
-	C []int  `cfg:"c"`
+type serviceConfig struct {
+	Port    uint16        `cfg:"port"`
+	Timeout time.Duration `cfg:"timeout"`
+	IDs     []uint64      `cfg:"ids"`
+	Factor  float32       `cfg:"factor"`
 }
 
 func TestConfig(t *testing.T) {
 	c := NewConfig()
-	assert.NoError(t, c.LoadYAMLString(`
-a:
-  b: 42
-  c: [1, 2, 3]
-d: "Hi"
-`))
-	assert.NoError(t, c.LoadYAMLString(`
-a:
-  b: 13
-e: 3.14
-live_time: 5s
-`))
+	assert.NoError(t, c.LoadYAMLGlob("./*"))
 
-	d := testConfig{}
+	d := config{}
 	assert.NoError(t, c.Decode(&d))
-
-	expected := testConfig{
-		A: testAConfig{
-			B: 13,
-			C: []int{1, 2, 3},
+	expected := config{
+		Name: "App",
+		Service: serviceConfig{
+			Port:    4200,
+			Timeout: 5 * time.Second,
+			IDs:     []uint64{1, 2, 42},
+			Factor:  3.14,
 		},
-		D:        "Hi",
-		E:        3.14,
-		LiveTime: 5 * time.Second,
 	}
 	assert.True(t, reflect.DeepEqual(expected, d))
 }
