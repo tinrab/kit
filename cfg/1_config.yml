@@ -1,0 +1,5 @@
+name: "App"
+service:
+  port: 4200
+  ids: [1, 2, 42]
+  factor: 3.14
