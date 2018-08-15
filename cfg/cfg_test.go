@@ -21,7 +21,33 @@ type serviceConfig struct {
 
 func TestConfig(t *testing.T) {
 	c := NewConfig()
-	assert.NoError(t, c.LoadYAMLGlob("./*"))
+	assert.NoError(t, c.LoadGlob("./*"))
+
+	d := config{}
+	assert.NoError(t, c.Decode(&d))
+	expected := config{
+		Name: "App",
+		Service: serviceConfig{
+			Port:    4200,
+			Timeout: 5 * time.Second,
+			IDs:     []uint64{1, 2, 42},
+			Factor:  3.14,
+		},
+	}
+	assert.True(t, reflect.DeepEqual(expected, d))
+}
+
+func TestJSONConfig(t *testing.T) {
+	c := NewConfig()
+	assert.NoError(t, c.LoadFile("./0_default.yml"))
+	assert.NoError(t, c.LoadJSONString(`{
+		"name": "App",
+		"service": {
+			"port": 4200,
+			"ids": [1, 2, 42],
+			"factor": 3.14
+		}
+	}`))
 
 	d := config{}
 	assert.NoError(t, c.Decode(&d))
