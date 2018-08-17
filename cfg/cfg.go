@@ -13,7 +13,7 @@ type Config struct {
 	Data map[string]interface{}
 }
 
-func NewConfig() *Config {
+func New() *Config {
 	return &Config{
 		Data: make(map[string]interface{}),
 	}

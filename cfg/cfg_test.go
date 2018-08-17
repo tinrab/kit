@@ -20,7 +20,7 @@ type serviceConfig struct {
 }
 
 func TestConfig(t *testing.T) {
-	c := NewConfig()
+	c := New()
 	assert.NoError(t, c.LoadGlob("./*"))
 
 	d := config{}
@@ -38,7 +38,7 @@ func TestConfig(t *testing.T) {
 }
 
 func TestJSONConfig(t *testing.T) {
-	c := NewConfig()
+	c := New()
 	assert.NoError(t, c.LoadFile("./0_default.yml"))
 	assert.NoError(t, c.LoadJSONString(`{
 		"name": "App",
