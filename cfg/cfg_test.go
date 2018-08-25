@@ -36,7 +36,6 @@ func TestConfig(t *testing.T) {
 	}
 	assert.True(t, reflect.DeepEqual(expected, d))
 }
-
 func TestJSONConfig(t *testing.T) {
 	c := New()
 	assert.NoError(t, c.LoadFile("./0_default.yml"))

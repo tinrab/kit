@@ -1,12 +1,9 @@
 package cfg
 
 import (
-	"io/ioutil"
-	"gopkg.in/yaml.v2"
 	"github.com/mitchellh/mapstructure"
-	"github.com/imdario/mergo"
+	"io/ioutil"
 	"path/filepath"
-	"encoding/json"
 )
 
 type Config struct {
@@ -45,30 +42,6 @@ func (c *Config) LoadFile(filename string) error {
 		return c.LoadJSON(data)
 	}
 	return nil
-}
-
-func (c *Config) LoadYAMLString(s string) error {
-	return c.LoadYAML([]byte(s))
-}
-
-func (c *Config) LoadJSONString(s string) error {
-	return c.LoadJSON([]byte(s))
-}
-
-func (c *Config) LoadYAML(data []byte) error {
-	res := make(map[string]interface{})
-	if err := yaml.Unmarshal(data, &res); err != nil {
-		return err
-	}
-	return mergo.Merge(&c.Data, res, mergo.WithOverride)
-}
-
-func (c *Config) LoadJSON(data []byte) error {
-	res := make(map[string]interface{})
-	if err := json.Unmarshal(data, &res); err != nil {
-		return err
-	}
-	return mergo.Merge(&c.Data, res, mergo.WithOverride)
 }
 
 func (c *Config) Decode(out interface{}) error {
