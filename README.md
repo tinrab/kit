@@ -10,3 +10,4 @@ A collection of utilities.
 - Security ([source](./security))
 - Retry ([source](./retry), [examples](./retry/retry_test.go))
 - Config ([source](./cfg), [examples](./cfg/cfg_test.go))
+- Unique IDs ([source](./id), [examples](./id/id_test.go))
