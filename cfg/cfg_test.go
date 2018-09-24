@@ -53,9 +53,9 @@ func TestJSON(t *testing.T) {
 	expected := config{
 		Name: "App",
 		Service: serviceConfig{
-			Port:    4200,
-			IDs:     []uint64{1, 2, 42},
-			Factor:  3.14,
+			Port:   4200,
+			IDs:    []uint64{1, 2, 42},
+			Factor: 3.14,
 		},
 	}
 	assert.True(t, reflect.DeepEqual(expected, d))
@@ -63,22 +63,22 @@ func TestJSON(t *testing.T) {
 
 func TestYAML(t *testing.T) {
 	c := New()
-	assert.NoError(t, c.LoadJSONString(`
+	assert.NoError(t, c.LoadYAMLString(`
 name: "App"
 service:
   port: 4200
   ids: [1, 2, 42]
   factor: 3.14
-	`))
+`))
 
 	d := config{}
 	assert.NoError(t, c.Decode(&d))
 	expected := config{
 		Name: "App",
 		Service: serviceConfig{
-			Port:    4200,
-			IDs:     []uint64{1, 2, 42},
-			Factor:  3.14,
+			Port:   4200,
+			IDs:    []uint64{1, 2, 42},
+			Factor: 3.14,
 		},
 	}
 	assert.True(t, reflect.DeepEqual(expected, d))
