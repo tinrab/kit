@@ -73,12 +73,18 @@ func (c *Container) inject(obj interface{}) {
 	for i := 0; i < t.NumField(); i++ {
 		field := t.Field(i)
 		inject := field.Tag.Get("inject")
-		if inject == "" {
-			continue
+		if inject != "" {
+			dependency := c.GetByName(inject)
+			if dependency != nil {
+				reflect.ValueOf(obj).Elem().Field(i).Set(reflect.ValueOf(dependency))
+			}
 		}
-		dependency := c.GetByName(inject)
-		if dependency != nil {
-			reflect.ValueOf(obj).Elem().Field(i).Set(reflect.ValueOf(dependency))
+
+		for _, d := range c.dependencies {
+			dt := reflect.TypeOf(d)
+			if field.Type.AssignableTo(dt) {
+				reflect.ValueOf(obj).Elem().Field(i).Set(reflect.ValueOf(d))
+			}
 		}
 	}
 }

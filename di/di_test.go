@@ -74,5 +74,6 @@ func TestWithStruct(t *testing.T) {
 	assert.NoError(t, c.Resolve())
 
 	a := c.GetByType(&A{}).(*A)
+	assert.NotNil(t, a.B)
 	assert.Equal(t, 42, a.Value())
 }
