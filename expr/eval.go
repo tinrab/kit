@@ -9,9 +9,9 @@ import (
 )
 
 var (
-	ErrEmptyExpression   = kit.NewError("empty expression")
-	ErrInvalidOperation  = kit.NewError("invalid operation '%s' at [%v]")
-	ErrUnknownIdentifier = kit.NewError("unknown identifier '%s' at [%v]")
+	ErrEmptyExpression   = kit.NewErrorWithMessage("empty expression")
+	ErrInvalidOperation  = kit.NewErrorWithMessage("invalid operation '%s' at [%v]")
+	ErrUnknownIdentifier = kit.NewErrorWithMessage("unknown identifier '%s' at [%v]")
 )
 
 type EvaluatorFunc func(s *Stack) interface{}

@@ -9,7 +9,7 @@ import (
 )
 
 var (
-	ErrInvalidJSONValue = kit.NewError("invalid JSON ID value")
+	ErrInvalidJSONValue = kit.NewErrorWithMessage("invalid JSON ID value")
 )
 
 type ID uint64
