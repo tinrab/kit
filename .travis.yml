@@ -1,9 +1,14 @@
+notifications:
+  email: false
+
+sudo: required
+
+services:
+  - cassandra
+
 language: go
 
 go:
-  - "1.10.x"
+  - "1.11.x"
 
-before_install:
-  - go get -u golang.org/x/vgo
-
-script: vgo test -v ./...
+script: go test -v ./...
