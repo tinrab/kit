@@ -2,14 +2,15 @@ package id
 
 import (
 	"bytes"
-	"github.com/tinrab/kit"
 	"strconv"
 	"sync"
 	"time"
+
+	"github.com/tinrab/kit"
 )
 
 var (
-	ErrInvalidJSONValue = kit.NewErrorWithMessage("invalid JSON ID value")
+	ErrInvalidJSONValue = kit.NewMessageError("invalid JSON ID value")
 )
 
 type ID uint64
