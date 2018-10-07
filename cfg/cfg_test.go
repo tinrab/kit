@@ -1,10 +1,11 @@
 package cfg
 
 import (
-	"testing"
-	"github.com/stretchr/testify/assert"
-	"time"
 	"reflect"
+	"testing"
+	"time"
+
+	"github.com/stretchr/testify/assert"
 )
 
 type config struct {

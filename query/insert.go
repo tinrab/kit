@@ -4,7 +4,6 @@ type Insert struct {
 	into    string
 	columns []string
 	rows    [][]interface{}
-	upsert  bool
 }
 
 func NewInsert() *Insert {
@@ -31,11 +30,6 @@ func (i *Insert) Rows(rows ...[]interface{}) *Insert {
 
 func (i *Insert) Row(values ...interface{}) *Insert {
 	i.rows = append(i.rows, values)
-	return i
-}
-
-func (i *Insert) Upsert() *Insert {
-	i.upsert = true
 	return i
 }
 

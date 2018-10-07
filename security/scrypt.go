@@ -5,6 +5,7 @@ import (
 	"crypto/rand"
 	"encoding/base64"
 	"encoding/binary"
+
 	"golang.org/x/crypto/scrypt"
 )
 

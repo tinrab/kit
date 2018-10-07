@@ -1,9 +1,10 @@
 package cfg
 
 import (
-	"github.com/mitchellh/mapstructure"
 	"io/ioutil"
 	"path/filepath"
+
+	"github.com/mitchellh/mapstructure"
 )
 
 type Config struct {
