@@ -48,12 +48,17 @@ func (c *Container) Resolve() error {
 	for _, d := range c.dependencies {
 		c.inject(d)
 	}
+	var opened []Dependency
 	for _, d := range c.dependencies {
 		if dep, ok := d.(Dependency); ok {
 			err := dep.Open()
 			if err != nil {
+				for _, od := range opened {
+					od.Close()
+				}
 				return err
 			}
+			opened = append(opened, dep)
 		}
 	}
 	return nil
