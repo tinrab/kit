@@ -3,6 +3,7 @@ package kit
 import (
 	"fmt"
 	"runtime"
+	"strings"
 )
 
 type Error struct {
@@ -34,7 +35,16 @@ func (e *Error) With(args ...interface{}) *Error {
 
 func (e *Error) Throw(args ...interface{}) *Error {
 	e.Args = args
-	_, e.File, e.Line, _ = runtime.Caller(1)
+	_, file, line, _ := runtime.Caller(1)
+	e.Line = line
+
+	fe := strings.LastIndex(file, "/") + 1
+	if fe < len(file) {
+		e.File = file[fe:]
+	} else {
+		e.File = file
+	}
+
 	return e
 }
 
