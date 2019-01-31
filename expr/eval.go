@@ -1,18 +1,11 @@
 package expr
 
 import (
+	"github.com/pkg/errors"
 	"go/ast"
 	"go/token"
 	"math"
 	"strconv"
-
-	"github.com/tinrab/kit"
-)
-
-var (
-	ErrEmptyExpression   = kit.NewMessageError("empty expression")
-	ErrInvalidOperation  = kit.NewMessageError("invalid operation '%s' at [%v]")
-	ErrUnknownIdentifier = kit.NewMessageError("unknown identifier '%s' at [%v]")
 )
 
 type EvaluatorFunc func(s *Stack) interface{}
@@ -40,7 +33,7 @@ func (e *evaluator) Evaluate(node ast.Node) (interface{}, error) {
 	if !e.stack.IsEmpty() {
 		return e.stack.Tail(), nil
 	}
-	return nil, ErrEmptyExpression
+	return nil, errors.New("empty expression")
 }
 
 func (e *evaluator) Visit(node ast.Node) ast.Visitor {
@@ -98,7 +91,7 @@ func (e *evaluator) VisitBinaryExpression(n *ast.BinaryExpr) {
 			case token.NEQ:
 				e.stack.Push(x != y)
 			default:
-				e.err = ErrInvalidOperation.With(n.Op, n.Pos())
+				e.err = errors.Errorf("invalid operation '%s' at [%v]", n.Op, n.Pos())
 				return
 			}
 		}
@@ -121,7 +114,7 @@ func (e *evaluator) VisitUnaryExpression(n *ast.UnaryExpr) {
 		case token.SUB:
 			e.stack.Push(-x)
 		default:
-			e.err = ErrInvalidOperation.With(n.Op, n.Pos())
+			e.err = errors.Errorf("invalid operation at ")
 			return
 		}
 	case bool:
@@ -129,7 +122,7 @@ func (e *evaluator) VisitUnaryExpression(n *ast.UnaryExpr) {
 		case token.NOT:
 			e.stack.Push(!x)
 		default:
-			e.err = ErrInvalidOperation.With(n.Op, n.Pos())
+			e.err = errors.Errorf("invalid operation '%s' at [%v]", n.Op, n.Pos())
 		}
 	}
 }
@@ -155,7 +148,7 @@ func (e *evaluator) VisitIdentifier(n *ast.Ident) {
 			e.stack.Push(x)
 		}
 	} else {
-		e.err = ErrUnknownIdentifier.With(n.Name)
+		e.err = errors.Errorf("unknown identifier '%s' at [%v]", n.Name, n.Pos())
 	}
 }
 

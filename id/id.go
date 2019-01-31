@@ -2,27 +2,29 @@ package id
 
 import (
 	"bytes"
+	"net"
 	"strconv"
 	"sync"
 	"time"
 
-	"github.com/tinrab/kit"
-)
-
-var (
-	ErrInvalidJSONValue = kit.NewMessageError("invalid JSON ID value")
+	"github.com/pkg/errors"
 )
 
 type ID uint64
 
 type Generator struct {
-	workerID    uint16
-	counter     uint16
-	startTime   int64
-	lastTime    int64
-	advanceTime int64
-	mutex       sync.Mutex
+	workerID  uint16
+	sequence  uint16
+	startTime int64
+	lastTime  int64
+	mutex     sync.Mutex
 }
+
+const (
+	bitLengthTimestamp = 38
+	bitLengthWorkerID  = 16
+	bitLengthSequence  = 10
+)
 
 func NewGenerator(workerID uint16) *Generator {
 	return NewGeneratorWithStartTime(workerID, time.Unix(0, 0))
@@ -30,11 +32,9 @@ func NewGenerator(workerID uint16) *Generator {
 
 func NewGeneratorWithStartTime(workerID uint16, startTime time.Time) *Generator {
 	return &Generator{
-		workerID:    workerID,
-		startTime:   startTime.UTC().UnixNano(),
-		lastTime:    startTime.UTC().UnixNano(),
-		advanceTime: 0,
-		mutex:       sync.Mutex{},
+		workerID:  workerID,
+		startTime: startTime.Unix(),
+		mutex:     sync.Mutex{},
 	}
 }
 
@@ -42,17 +42,17 @@ func (g *Generator) Generate() ID {
 	g.mutex.Lock()
 	defer g.mutex.Unlock()
 
-	t := g.timeOffset()
+	g.lastTime = time.Now().Unix() - g.startTime
 
-	value := ID((t/int64(time.Second))<<32) |
-		ID(g.workerID)<<16 |
-		ID(g.counter)
+	value := Encode(g.lastTime, g.workerID, g.sequence)
 
-	g.counter++
-	if t-g.lastTime > int64(time.Second) {
-		g.counter = 0
+	g.sequence++
+
+	if g.sequence >= (1 << bitLengthSequence) {
+		g.sequence = 0
+
+		time.Sleep(time.Second)
 	}
-	g.lastTime = t
 
 	return value
 }
@@ -61,28 +61,35 @@ func (g *Generator) GenerateList(size int) []ID {
 	g.mutex.Lock()
 	defer g.mutex.Unlock()
 
-	t := g.timeOffset()
-
 	list := make([]ID, size)
-	for i := 0; i < size; i++ {
-		t = g.timeOffset()
-		list[i] = ID((t/int64(time.Second))<<32) |
-			ID(g.workerID)<<16 |
-			ID(g.counter)
+	g.lastTime = time.Now().Unix() - g.startTime
 
-		g.counter++
-		if g.counter == 0 {
-			g.advanceTime += int64(time.Second)
+	for i := 0; i < size; i++ {
+		list[i] = Encode(g.lastTime, g.workerID, g.sequence)
+
+		g.sequence++
+
+		if g.sequence >= (1 << bitLengthSequence) {
+			g.sequence = 0
+
+			time.Sleep(time.Second)
+			g.lastTime = time.Now().Unix() - g.startTime
 		}
 	}
-
-	g.lastTime = t
 
 	return list
 }
 
-func (g Generator) timeOffset() int64 {
-	return time.Now().UTC().UnixNano() - g.startTime + g.advanceTime
+func (i ID) Timestamp() int64 {
+	return int64(i >> (bitLengthWorkerID + bitLengthSequence))
+}
+
+func (i ID) WorkerID() uint16 {
+	return uint16((i >> bitLengthSequence) & (1<<bitLengthWorkerID - 1))
+}
+
+func (i ID) Sequence() uint16 {
+	return uint16(i & (1<<bitLengthSequence - 1))
 }
 
 func (i ID) MarshalJSON() ([]byte, error) {
@@ -95,10 +102,10 @@ func (i ID) MarshalJSON() ([]byte, error) {
 
 func (i *ID) UnmarshalJSON(data []byte) error {
 	if len(data) < 3 || data[0] != '"' || data[len(data)-1] != '"' {
-		return ErrInvalidJSONValue
+		return errors.New("invalid JSON ID value")
 	}
 
-	value, err := ParseID(string(data[1 : len(data)-1]))
+	value, err := Parse(string(data[1 : len(data)-1]))
 	if err != nil {
 		return err
 	}
@@ -108,18 +115,71 @@ func (i *ID) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
-func (i ID) Decode() (int64, uint16, uint16) {
-	t := int64(i >> 32)
-	w := uint16((i >> 16) & (1<<16 - 1))
-	c := uint16(i & (1<<16 - 1))
-
-	return t, w, c
-}
-
-func ParseID(s string) (ID, error) {
+func Parse(s string) (ID, error) {
 	i, err := strconv.ParseUint(s, 10, 64)
 	if err != nil {
 		return 0, err
 	}
 	return ID(i), nil
+}
+
+func Encode(timestamp int64, workerID uint16, sequence uint16) ID {
+	if timestamp >= 1<<bitLengthTimestamp {
+		panic("timestamp is too big")
+	}
+	if sequence >= 1<<bitLengthSequence {
+		panic("sequence is too big")
+	}
+
+	t := uint64(timestamp)
+	w := uint64(workerID)
+	s := uint64(sequence)
+
+	return ID((t&(1<<bitLengthTimestamp-1))<<(bitLengthWorkerID+bitLengthSequence) |
+		((w & (1<<bitLengthWorkerID - 1)) << bitLengthSequence) |
+		(s & (1<<bitLengthSequence - 1)))
+}
+
+func GetWorkerID() (uint16, error) {
+	faces, err := net.Interfaces()
+	if err != nil {
+		return 0, err
+	}
+
+	for _, face := range faces {
+		if face.Flags&net.FlagUp == 0 || face.Flags&net.FlagLoopback != 0 {
+			continue
+		}
+
+		addresses, err := face.Addrs()
+		if err != nil {
+			return 0, err
+		}
+
+		for _, address := range addresses {
+			var ip net.IP
+
+			switch v := address.(type) {
+			case *net.IPNet:
+				ip = v.IP
+			case *net.IPAddr:
+				ip = v.IP
+			}
+
+			if ip == nil || ip.IsLoopback() {
+				continue
+			}
+
+			ip = ip.To4()
+			if ip == nil {
+				continue
+			}
+
+			id := uint16(ip[2])<<8 | uint16(ip[3])
+
+			return id, nil
+		}
+	}
+
+	return 0, errors.New("could not generate machine ID")
 }
