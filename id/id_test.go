@@ -2,8 +2,9 @@ package id
 
 import (
 	"encoding/json"
-	"github.com/stretchr/testify/assert"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 type Cat struct {
@@ -12,7 +13,7 @@ type Cat struct {
 }
 
 func TestParse(t *testing.T) {
-	i, err := ParseID("6604873748002701312")
+	i, err := Parse("6604873748002701312")
 	assert.NoError(t, err)
 	assert.Equal(t, ID(6604873748002701312), i)
 }
@@ -33,4 +34,41 @@ func TestJSON(t *testing.T) {
 
 	assert.Equal(t, cat.Name, decodedCat.Name)
 	assert.Equal(t, i, decodedCat.ID)
+}
+
+func TestGenerate(t *testing.T) {
+	g := NewGenerator(42)
+
+	var ids []ID
+
+	for i := 0; i < 10; i++ {
+		id := g.Generate()
+		for _, x := range ids {
+			if x == id {
+				t.Fail()
+			}
+		}
+		ids = append(ids, id)
+	}
+}
+
+func TestGenerateList(t *testing.T) {
+	g := NewGenerator(42)
+	const n = 1026
+
+	ids := g.GenerateList(n)
+
+	assert.Equal(t, n, len(ids))
+
+	for i, x := range ids {
+		if i == 0 {
+			continue
+		}
+
+		for _, y := range ids[:i] {
+			if y == x {
+				t.Fatal("generated duplicate IDs")
+			}
+		}
+	}
 }
