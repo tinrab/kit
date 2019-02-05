@@ -72,3 +72,33 @@ func TestGenerateList(t *testing.T) {
 		}
 	}
 }
+
+func TestBase64(t *testing.T) {
+	ids := []ID{
+		42, 1337, 932568,
+	}
+	for i, id := range ids {
+		v := id.Base64()
+		v2, err := ParseBase64(v)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		assert.Equal(t, ids[i], v2)
+	}
+}
+
+func TestBase62(t *testing.T) {
+	ids := []ID{
+		13, 1337, 13333333337,
+	}
+	for i, id := range ids {
+		v := id.Base62()
+		v2, err := ParseBase62(v)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		assert.Equal(t, ids[i], v2)
+	}
+}
