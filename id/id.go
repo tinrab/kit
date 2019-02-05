@@ -2,6 +2,7 @@ package id
 
 import (
 	"bytes"
+	"encoding/base64"
 	"net"
 	"strconv"
 	"sync"
@@ -24,6 +25,13 @@ const (
 	bitLengthTimestamp = 38
 	bitLengthWorkerID  = 16
 	bitLengthSequence  = 10
+)
+
+var (
+	ErrGenerateMachineID  = errors.New("could not generate machine ID")
+	ErrInvalidBase62Value = errors.New("invalid base62 value")
+
+	base62Alphabet = []rune("0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ")
 )
 
 func NewGenerator(workerID uint16) *Generator {
@@ -115,12 +123,87 @@ func (i *ID) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
+func (i ID) Base64() string {
+	if i == 0 {
+		panic("cannot encode zero value")
+	}
+
+	var data []byte
+	v := i
+	for v > 0 {
+		data = append(data, byte(v&255))
+		v >>= 8
+	}
+
+	return base64.URLEncoding.EncodeToString(data)
+}
+
+func (i ID) Base62() string {
+	if i == 0 {
+		panic("cannot encode zero value")
+	}
+
+	v := uint64(i)
+	e := ""
+
+	for v > 0 {
+		e = string(base62Alphabet[v%uint64(len(base62Alphabet))]) + e
+		v /= uint64(len(base62Alphabet))
+	}
+
+	return string(e)
+}
+
 func Parse(s string) (ID, error) {
 	i, err := strconv.ParseUint(s, 10, 64)
 	if err != nil {
 		return 0, err
 	}
 	return ID(i), nil
+}
+
+func ParseBase64(s string) (ID, error) {
+	data, err := base64.URLEncoding.DecodeString(s)
+	if err != nil {
+		return 0, err
+	}
+
+	id := uint64(0)
+	for i, b := range data {
+		id += uint64(b) << (8 * uint64(i))
+	}
+
+	return ID(id), nil
+}
+
+func ParseBase62(s string) (ID, error) {
+	data := []rune(s)
+	id := uint64(0)
+
+	for i := len(data) - 1; i >= 0; i-- {
+		c := data[i]
+		j := -1
+		for k := 0; k < len(base62Alphabet); k++ {
+			if base62Alphabet[k] == c {
+				j = k
+				break
+			}
+		}
+
+		if j == -1 {
+			return 0, ErrInvalidBase62Value
+		}
+
+		m := uint64(len(data) - 1 - i)
+		p := uint64(1)
+		for ; m > 0; m-- {
+			p *= uint64(len(base62Alphabet))
+		}
+
+		id += uint64(j) * p
+	}
+
+	return ID(id), nil
 }
 
 func Encode(timestamp int64, workerID uint16, sequence uint16) ID {
@@ -181,5 +264,5 @@ func GetWorkerID() (uint16, error) {
 		}
 	}
 
-	return 0, errors.New("could not generate machine ID")
+	return 0, ErrGenerateMachineID
 }
