@@ -11,7 +11,7 @@ import (
 	"github.com/pkg/errors"
 )
 
-type ID uint64
+type ID int64
 
 type Generator struct {
 	workerID  uint16
@@ -22,7 +22,7 @@ type Generator struct {
 }
 
 const (
-	bitLengthTimestamp = 38
+	bitLengthTimestamp = 37
 	bitLengthWorkerID  = 16
 	bitLengthSequence  = 10
 )
@@ -30,6 +30,7 @@ const (
 var (
 	ErrGenerateMachineID  = errors.New("could not generate machine ID")
 	ErrInvalidBase62Value = errors.New("invalid base62 value")
+	ErrInvalidValue       = errors.New("invalid value")
 
 	base62Alphabet = []rune("0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ")
 )
@@ -103,7 +104,7 @@ func (i ID) Sequence() uint16 {
 func (i ID) MarshalJSON() ([]byte, error) {
 	buf := bytes.Buffer{}
 	buf.WriteRune('"')
-	buf.WriteString(strconv.FormatUint(uint64(i), 10))
+	buf.WriteString(strconv.FormatInt(int64(i), 10))
 	buf.WriteRune('"')
 	return buf.Bytes(), nil
 }
@@ -124,8 +125,8 @@ func (i *ID) UnmarshalJSON(data []byte) error {
 }
 
 func (i ID) Base64() string {
-	if i == 0 {
-		panic("cannot encode zero value")
+	if i <= 0 {
+		panic(ErrInvalidValue.Error())
 	}
 
 	var data []byte
@@ -139,25 +140,28 @@ func (i ID) Base64() string {
 }
 
 func (i ID) Base62() string {
-	if i == 0 {
-		panic("cannot encode zero value")
+	if i <= 0 {
+		panic(ErrInvalidValue.Error())
 	}
 
-	v := uint64(i)
+	v := int64(i)
 	e := ""
 
 	for v > 0 {
-		e = string(base62Alphabet[v%uint64(len(base62Alphabet))]) + e
-		v /= uint64(len(base62Alphabet))
+		e = string(base62Alphabet[v%int64(len(base62Alphabet))]) + e
+		v /= int64(len(base62Alphabet))
 	}
 
 	return string(e)
 }
 
 func Parse(s string) (ID, error) {
-	i, err := strconv.ParseUint(s, 10, 64)
+	i, err := strconv.ParseInt(s, 10, 64)
 	if err != nil {
 		return 0, err
+	}
+	if i <= 0 {
+		return 0, ErrInvalidValue
 	}
 	return ID(i), nil
 }
@@ -168,9 +172,13 @@ func ParseBase64(s string) (ID, error) {
 		return 0, err
 	}
 
-	id := uint64(0)
+	id := int64(0)
 	for i, b := range data {
-		id += uint64(b) << (8 * uint64(i))
+		id += int64(b) << (8 * uint64(i))
+	}
+
+	if id <= 0 {
+		return 0, ErrInvalidValue
 	}
 
 	return ID(id), nil
@@ -178,7 +186,7 @@ func ParseBase64(s string) (ID, error) {
 
 func ParseBase62(s string) (ID, error) {
 	data := []rune(s)
-	id := uint64(0)
+	id := int64(0)
 
 	for i := len(data) - 1; i >= 0; i-- {
 		c := data[i]
@@ -194,13 +202,17 @@ func ParseBase62(s string) (ID, error) {
 			return 0, ErrInvalidBase62Value
 		}
 
-		m := uint64(len(data) - 1 - i)
-		p := uint64(1)
+		m := int64(len(data) - 1 - i)
+		p := int64(1)
 		for ; m > 0; m-- {
-			p *= uint64(len(base62Alphabet))
+			p *= int64(len(base62Alphabet))
 		}
 
-		id += uint64(j) * p
+		id += int64(j) * p
+	}
+
+	if id <= 0 {
+		return 0, ErrInvalidValue
 	}
 
 	return ID(id), nil
@@ -214,9 +226,9 @@ func Encode(timestamp int64, workerID uint16, sequence uint16) ID {
 		panic("sequence is too big")
 	}
 
-	t := uint64(timestamp)
-	w := uint64(workerID)
-	s := uint64(sequence)
+	t := int64(timestamp)
+	w := int64(workerID)
+	s := int64(sequence)
 
 	return ID((t&(1<<bitLengthTimestamp-1))<<(bitLengthWorkerID+bitLengthSequence) |
 		((w & (1<<bitLengthWorkerID - 1)) << bitLengthSequence) |
